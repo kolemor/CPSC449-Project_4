@@ -1,0 +1,1 @@
+This file is here only for git to properly keep track of the log directory.

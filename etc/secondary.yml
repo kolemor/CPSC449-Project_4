@@ -1,0 +1,19 @@
+fuse:
+  dir: var/secondary/fuse
+
+  allow-other: false
+
+data:
+  dir: var/secondary/data
+
+  compress: true
+
+http:
+  addr: ":20203"
+
+lease:
+  type: "static"
+
+  candidate: false
+
+  advertise-url: "http://localhost:20202"

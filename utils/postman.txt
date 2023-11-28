@@ -1,0 +1,121 @@
+Useful stuff for postman requests. 
+Shows which roles are required to access an api (if any),
+as well is the request type and url. 
+Post also provides the format of data needed to submit.
+
+
+
+POST: http://localhost:5400/api/users/login
+
+Student:
+
+{
+  "name": "James Smith",
+  "password": "James Smith"
+}
+
+Instructor:
+
+{
+  "name": "Nelson Hanson",
+  "password": "Nelson Hanson"
+}
+
+Registrar:
+
+{
+  "name": "Julian Holland",
+  "password": "Julian Holland"
+}
+
+Enrollment:
+
+--Student--
+
+GET: http://localhost:5400/api/students/{student_id}/classes
+[Student, Registrar]
+
+POST: http://localhost:5400/api/students/{student_id}/classes/{class_id}/enroll/
+[Student, Registrar]
+
+
+
+PUT: http://localhost:5400/api/students/{student_id}/classes/{class_id}/drop/
+[Student, Registrar]
+
+--Waitlist--
+
+GET: http://localhost:5400/api/waitlist/students/{student_id}
+[Student, Registrar]
+
+PUT: http://localhost:5400/api/waitlist/students/{student_id}/classes/{class_id}/drop/
+[Student, Registrar]
+
+GET: http://localhost:5400/api/waitlist/instructors/{instructor_id}/classes/{class_id}
+[Instructor, Registrar]
+
+--Instructor--
+
+GET: http://localhost:5400/api/instructors/{instructor_id}/classes/{class_id}/enrollment
+[Instructor, Registrar]
+
+GET: http://localhost:5400/api/instructors/{instructor_id}/classes/{class_id}/drop
+[Instructor, Registrar]
+
+POST: http://localhost:5400/api/instructors/{instructor_id}/classes/{class_id}/students/{student_id}/drop/
+[Instructor, Registrar]
+
+--Registrar--
+
+POST: http://localhost:5400/api/registrar/classes/
+[Registrar]
+
+{
+  "name": "string",
+  "course_code": "string",
+  "section_number": 0,
+  "current_enroll": 0,
+  "max_enroll": 0,
+  "department_id": 0,
+  "instructor_id": 0
+}
+
+DELETE: http://localhost:5400/api/registrar/classes/{class_id}
+[Registrar]
+
+PUT: http://localhost:5400/api/registrar/classes/{class_id}/instructors/{instructor_id}
+[Registrar]
+
+PUT: http://localhost:5400/api/registrar/automatic-enrollment/freeze
+[Registrar]
+
+POST: http://localhost:5400/api/registrar/create_user
+[Registrar]
+
+--Debug--
+
+GET: http://localhost:5400/api/debug/students/{student_id}/enrolled
+[Registrar]
+
+GET: http://localhost:5400/api/debug/waitlist/classes
+[Registrar]
+
+GET: http://localhost:5400/api/debug/users/search
+[Registrar]
+
+GET: http://localhost:5400/api/debug/classes
+[Registrar]
+
+Users:
+
+POST: http://localhost:5400/api/users/register
+
+{
+  "name": "string",
+  "password": "string"
+}
+
+POST: http://localhost:5400/api/users/check_password
+
+GET: http://localhost:5400/api/debug/search
+
