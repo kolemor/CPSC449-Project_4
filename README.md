@@ -1,4 +1,4 @@
-# Project 3
+# Project 4
 
 ## create a venv and activate it then install the requirements
 
@@ -21,6 +21,8 @@
 ## Create the databases or restore them to their default data
 
 `sh ./bin/db_creation.sh`
+
+- after database creation, you may or may not need to restart your computer to get the servers to run properly. They like to be finicky sometimes.
 
 ### If you want to individually create each database, you can instead run these commands from the main directory
 

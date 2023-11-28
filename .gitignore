@@ -1,0 +1,61 @@
+# Ignore compiled Python files
+__pycache__
+__pycache__/
+*.pyc
+
+# Ignore AWS files
+aws/
+
+# Ignore DynamoDB files
+DynamoDBLocal_lib/
+dynamodb*
+DynamoDB*
+
+# Ignore the virtual environment directory (if using virtual environments)
+venv/
+env/
+
+# Ignore system-specific or editor-generated files
+*.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Ignore log files and temporary files
+*.log
+*.swp
+
+# Ignore SQLite database files (if not needed in version control)
+*.db
+
+# Ignore any generated PDF files
+*.pdf
+
+# Ignore generated and temporary files from various development tools
+*.pyo
+*.pyd
+*.db.sqlite3
+*.coverage
+htmlcov/
+.coverage
+.coverage.*
+log.txt
+
+# Ignore project-specific configuration files
+settings.ini
+
+# Ignore local development settings (e.g., for environment variables)
+#.env
+
+# Ignore dependencies installed via pip (you can recreate them with requirements.txt)
+venv/
+env/
+myenv/
+
+# Ignore litefs stuff
+var/primary/data/
+var/primary/fuse/
+var/secondary/data/
+var/secondary/fuse/
+var/tertiary/data/
+var/tertiary/fuse/
