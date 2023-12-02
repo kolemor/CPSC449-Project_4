@@ -42,13 +42,17 @@
 
   `http://localhost:5002/docs`
 
-- user service
+- User service
 
   `http://localhost:5100/docs`
 
 - KrakenD
 
   `http://localhost:5400/api/`
+
+- Notification service
+
+  `http://localhost:5600/docs`
 
 # Enrollment Service testing variables
 
