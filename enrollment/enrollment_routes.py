@@ -186,8 +186,7 @@ def enroll_student_in_class(student_id: int, class_id: int, request: Request):
 
     new_enrollment = class_data.get("current_enroll", 0) + 1
 
-    # Check if the class is full, add student to waitlist if no
-    ## code goes here
+    # Check if the class is full, add student to waitlist if no.
     if new_enrollment >= class_data.get("max_enroll", 0):
         # freeze is in place
         if not FREEZE:
