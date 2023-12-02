@@ -59,3 +59,6 @@ var/secondary/data/
 var/secondary/fuse/
 var/tertiary/data/
 var/tertiary/fuse/
+
+# Ingore node modules
+node_modules

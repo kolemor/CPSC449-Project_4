@@ -77,6 +77,20 @@ rm "dynamodbv2.tar.gz"
 # Move extra files to DynamoDB folder
 mv LICENSE.txt README.txt THIRD-PARTY-LICENSES.txt DynamoDBLocal_lib/
 
+# ***** Block to install webhook forwarding ***** 
+# install the smee client
+npm install --global smee-client
+
+# initialize npm in the notification folder
+cd ./notification
+npm install express
+cd ..
+
+# Install rabbitMQ
+sudo apt update
+sudo apt install --yes rabbitmq-server
+
+
 # *************************************
 
 # Install HTTPie for Terminal to work with REST APIs

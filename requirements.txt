@@ -6,3 +6,4 @@ jwcrypto
 redis[hiredis]
 httpx
 boto3
+aiosmtpd
