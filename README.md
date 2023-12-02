@@ -22,7 +22,7 @@
 
 `sh ./bin/db_creation.sh`
 
-- after database creation, you may or may not need to restart your computer to get the servers to run properly. They like to be finicky sometimes.
+- after database creation, you will probably need to stop running the servers and then restarted them for the endpoints to properly connect to the databases. You may or may not need to restart your computer to get the servers to run properly. They like to be finicky sometimes.
 
 ### If you want to individually create each database, you can instead run these commands from the main directory
 
