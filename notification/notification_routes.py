@@ -1,7 +1,6 @@
 import redis
 import boto3
 
-from typing import List
 from fastapi import APIRouter, HTTPException
 from enrollment.enrollment_dynamo import Enrollment
 from enrollment.enrollment_redis import Subscription
@@ -19,12 +18,11 @@ dynamodb = boto3.resource("dynamodb", endpoint_url="http://localhost:5500")
 enrollment = Enrollment(dynamodb)
 sub = Subscription()
 
-# Placeholder for storing subscriptions in Redis
-SUBSCRIPTIONS_KEY = "subscriptions:{}"
-
-
 # ==========================================endpoints==================================================
 
+# Added basic functionality to endpoints, as per the "Create an enrollment notification service"
+# instructions listed in the project 4 document. Everything should work but make sure to test it
+# yourselves. Will probably have to be updated when implementing the rest of the requirements.
 
 # Subscribe to notifications for a new course
 @router.post("/students/{student_id}/subscribe/{class_id}", tags=["Notification"])
@@ -68,6 +66,7 @@ def subscribe_to_course(student_id: int, class_id: int, email: str = "", webhook
     return {"message": "Subscription successful", "subscription": sub_data}
 
 
+# List all subscriptions for a student
 @router.get("/students/{student_id}/subscriptions", tags=["Notification"])
 def list_current_subscriptions(student_id: int):
 
