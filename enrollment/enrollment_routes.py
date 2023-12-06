@@ -2,12 +2,16 @@ import logging.config
 import boto3
 import redis
 
+import pika
+
 from fastapi import Depends, HTTPException, APIRouter, status, Request
 from typing import Optional
 from boto3.dynamodb.conditions import Key, Attr
 from enrollment.enrollment_schemas import *
 from enrollment.enrollment_dynamo import Enrollment, PartiQL
-from enrollment.enrollment_redis import Waitlist
+from enrollment.enrollment_redis import Waitlist, Subscription
+
+
 
 settings = Settings()
 router = APIRouter()
@@ -227,7 +231,7 @@ def enroll_student_in_class(student_id: int, class_id: int, request: Request):
         UpdateExpression="SET dropped = :dropped",
         ExpressionAttributeValues={":dropped": new_dropped},
     )
-
+ 
     return {"message": "Student successfully enrolled in class"}
 
 
@@ -276,6 +280,7 @@ def drop_student_from_class(student_id: int, class_id: int, request: Request):
 
     # fetch waitlist information
     waitlist_data = wl.is_student_on_waitlist(student_id, class_id)
+    
 
     # check if the student is enrolled or on the waitlist
     for item in enrollment_data["Items"]:
@@ -299,14 +304,34 @@ def drop_student_from_class(student_id: int, class_id: int, request: Request):
                 UpdateExpression="SET enrolled = :enrolled",
                 ExpressionAttributeValues={":enrolled": student_enroll},
             )
-
-    # Update dropped table
-    class_table.update_item(
-        Key={"id": class_id},
-        UpdateExpression="SET dropped = list_append(dropped, :student_id)",
-        ExpressionAttributeValues={":student_id": [student_id]},
+    
+    
+    students = wl.get_class_waitlist(class_id)
+    if students:
+        next_student = int(min(students, key=students.get))
+        print(f"This is the top_student--- {next_student}")
+        #top_student = next_student[0][0].decode("utf-8")
+        wl.remove_student_from_waitlists(next_student, class_id)
+        class_table.update_item(
+            Key={"id": class_id},
+            UpdateExpression="SET enrolled = list_append(enrolled, :student_id)",
+            ExpressionAttributeValues={":student_id": [next_student]},
+        )
+        class_table.update_item(
+            Key={"id": class_id},
+            UpdateExpression="SET dropped = list_append(dropped, :student_id)",
+            ExpressionAttributeValues={":student_id": [student_id]},
     )
-
+    else:
+        next_student = None
+    
+     # Update dropped table
+        class_table.update_item(
+            Key={"id": class_id},
+            UpdateExpression="SET dropped = list_append(dropped, :student_id)",
+            ExpressionAttributeValues={":student_id": [student_id]},
+    )
+  
     return {"message": "Student successfully dropped class"}
 
 
@@ -736,6 +761,27 @@ def instructor_drop_class(instructor_id: int, class_id: int, student_id: int, re
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Student not enrolled in this class",
         )
+
+    ###########################################################################################################
+    # This is where the waitlist logic will go
+    students = wl.get_class_waitlist(class_id)
+    if students:
+        next_student = int(min(students, key=students.get))
+        print(f"This is the top_student--- {next_student}")
+        #top_student = next_student[0][0].decode("utf-8")
+        wl.remove_student_from_waitlists(next_student, class_id)
+        class_table.update_item(
+            Key={"id": class_id},
+            UpdateExpression="SET enrolled = list_append(enrolled, :student_id)",
+            ExpressionAttributeValues={":student_id": [next_student]},
+        )
+        class_table.update_item(
+            Key={"id": class_id},
+            UpdateExpression="SET dropped = list_append(dropped, :student_id)",
+            ExpressionAttributeValues={":student_id": [student_id]},
+    )
+    else:
+        next_student = None
 
     # DynamoDB updated with the modified enrolled and dropped lists
     try:

@@ -231,9 +231,13 @@ place = 1
 sid = 1
 for class_data in sample_classes:
     while place <= class_data.current_enroll:
-        class_data.enrolled.append(sid)
-        sid += 1
-        place += 1
+        if place > class_data.max_enroll:
+            sid += 1
+            place += 1
+        else:
+            class_data.enrolled.append(sid)
+            sid += 1
+            place += 1
     place = 1
 
 sample_users = []
