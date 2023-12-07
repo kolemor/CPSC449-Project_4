@@ -323,8 +323,7 @@ def drop_student_from_class(student_id: int, class_id: int, request: Request):
             UpdateExpression="SET dropped = list_append(dropped, :student_id)",
             ExpressionAttributeValues={":student_id": [student_id]},
         )
-        print(type(sub))
-        print(dir(sub))
+       
         subscribed = sub.is_student_subscribed(next_student,class_id)
         if subscribed:
             sub.get_all_subscriptions(next_student)
