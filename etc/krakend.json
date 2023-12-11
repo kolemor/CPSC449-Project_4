@@ -113,7 +113,7 @@
     {
       "endpoint": "/api/waitlist/students/{student_id}",
       "method": "GET",
-      "input_headers": ["X-User", "X-Roles"],
+      "input_headers": ["X-User", "X-Roles","If-None-Match"],
       "extra_config": {
         "auth/validator": {
           "alg": "RS256",
