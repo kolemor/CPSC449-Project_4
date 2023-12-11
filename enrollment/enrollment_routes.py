@@ -3,6 +3,7 @@ import boto3
 import redis
 
 import pika
+import json
 
 from fastapi import Depends, HTTPException, APIRouter, status, Request
 from typing import Optional
@@ -332,9 +333,16 @@ def drop_student_from_class(student_id: int, class_id: int, request: Request):
                     webhook = subscription["webhook_url"]
                     email = subscription["email"]
                     break
-
+            # craft message to be sent 
+            message = {
+                "class_name": class_data["name"],
+                "message": "You have been enrolled in " + class_data["name"] + " by the registrar",
+                "webhook_url": webhook,
+                "email": email,
+            }
+            message = json.dumps(message)
             #subscription_details = sub.get_subscription(next_student, class_id)
-            message = "You have been enrolled in " + class_data["name"] + " by the registrar"
+            # message = "You have been enrolled in " + class_data["name"] + " by the registrar"
             connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
             channel = connection.channel()
 
