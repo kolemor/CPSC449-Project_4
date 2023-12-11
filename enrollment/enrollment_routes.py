@@ -4,7 +4,7 @@ import redis
 
 import pika
 import json
-
+import hashlib
 from fastapi import Depends, HTTPException, APIRouter, status, Request
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
@@ -19,8 +19,6 @@ from datetime import datetime
 settings = Settings()
 router = APIRouter()
 
-# Initialized last modified date to test
-last_modified = 'Sat, 09 Dec 2023 12:00:00 GMT'
 CLASS_TABLE = "enrollment_class"
 USER_TABLE = "enrollment_user"
 DEBUG = False
@@ -53,6 +51,11 @@ logging.config.fileConfig(
     settings.enrollment_logging_config, disable_existing_loggers=False
 )
 
+# ETag Generator for any changes waitlist
+def generate_etag(data):
+    data_string = json.dumps(data, sort_keys=True)
+    # Create a hash of this string
+    return hashlib.md5(data_string.encode()).hexdigest()
 
 # ==========================================students==================================================
 
@@ -404,20 +407,19 @@ def view_waiting_list(student_id: int, request: Request):
             detail="Student is not on a waitlist",
         )
 
-    # Implement Cache Waitlist Position
-    if_modified_since = request.headers.get("If-Modified-Since")
-    
-    if if_modified_since:
-        # Set timestamp to current time
-        timestamp = datetime.strptime(if_modified_since, '%a, %d %b %Y %H:%M:%S GMT' )
-        print("Current time:", timestamp)
-    
-        # Not Modified
-        if timestamp >= last_modified:
-            raise HTTPException(
-                status_code=304, detail="Waitlist position has not changed"
-            )
+    # Generate an ETag for waitlist data
+    etag = generate_etag(waitlist_data)
+
+    # Obtain current ETag & compare against new etag, 
+    # return status 304 if same ETag
+    if_none_match = request.headers.get("If-None-Match")
+    if if_none_match and if_none_match == etag:
+        raise HTTPException(
+            status_code=status.HTTP_304_NOT_MODIFIED,
+            detail="Waitlist for student has not been modified"
+        )
         
+
     # fetch all relevant waitlist information for student
     student_class_id = waitlist_data.keys()
 
@@ -432,13 +434,13 @@ def view_waiting_list(student_id: int, request: Request):
         )
         waitlist_list.append(waitlist_info)
 
+    
     waitlist_json = jsonable_encoder(waitlist_list)
     response = JSONResponse(content={"Waitlists": waitlist_json})
-    
-    # 'Last-Modified' header set to last modification timestamp 
-    last_modified = datetime.now()
-    response.headers["Last-Modified"] = last_modified.strftime('%a, %d %b %Y %H:%M:%S GMT')
-    
+
+    # Update ETag if changed
+    response.headers["ETag"] = etag
+
     # Return Student's Waitlist
     return response
 
