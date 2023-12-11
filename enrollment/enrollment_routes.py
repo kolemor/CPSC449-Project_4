@@ -11,7 +11,7 @@ from boto3.dynamodb.conditions import Key, Attr
 from enrollment.enrollment_schemas import *
 from enrollment.enrollment_dynamo import Enrollment, PartiQL
 from enrollment.enrollment_redis import Waitlist, Subscription
-
+from datetime import datetime
 
 
 settings = Settings()
@@ -22,6 +22,9 @@ USER_TABLE = "enrollment_user"
 DEBUG = False
 FREEZE = False
 MAX_WAITLIST = 3
+
+# Initialized last modified date to test
+last_modified = datetime(2023,12,10) 
 
 def get_logger():
     return logging.getLogger(__name__)
@@ -369,7 +372,6 @@ def drop_student_from_class(student_id: int, class_id: int, request: Request):
 # Get all waiting lists for a student
 @router.get("/waitlist/students/{student_id}", tags=["Waitlist"])
 def view_waiting_list(student_id: int, request: Request):
-
     if request.headers.get("X-User"):
         current_user = int(request.headers.get("X-User"))
 
@@ -391,7 +393,7 @@ def view_waiting_list(student_id: int, request: Request):
 
     # Retrieve waitlist entries for the specified student from redis
     waitlist_data = wl.get_student_waitlist(student_id)
-
+        
     # Check if exist
     if not waitlist_data:
         raise HTTPException(
@@ -399,6 +401,19 @@ def view_waiting_list(student_id: int, request: Request):
             detail="Student is not on a waitlist",
         )
 
+    # Implement Cache Waitlist Position
+    if_modified_since = request.headers.get('If-Modified-Since')
+
+    if if_modified_since:
+        # Set timestamp to current time
+        timestamp = datetime.strptime(if_modified_since, '%a, %d %b %Y %H:%M:%S %Z' )
+        
+        # Not Modified
+        if timestamp >= last_modified:
+            raise HTTPException(
+                status_code = 304, detail="Waitlist position has not changed"
+            )
+        
     # fetch all relevant waitlist information for student
     student_class_id = waitlist_data.keys()
 
@@ -413,7 +428,15 @@ def view_waiting_list(student_id: int, request: Request):
         )
         waitlist_list.append(waitlist_info)
 
-    return {"Waitlists": waitlist_list}
+    
+    response = {"Waitlists": waitlist_list}
+
+    # 'Last-Modified' header set to last modification timestamp 
+    last_modified = datetime.now()
+    response.headers["Last-Modified"] = last_modified.strftime('%a, %d %b %Y %H:%M:%S %Z')
+    
+    # Return Student's Waitlist
+    return response
 
 
 # remove a student from a waiting list
