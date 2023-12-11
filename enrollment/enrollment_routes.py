@@ -6,6 +6,8 @@ import pika
 import json
 
 from fastapi import Depends, HTTPException, APIRouter, status, Request
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from typing import Optional
 from boto3.dynamodb.conditions import Key, Attr
 from enrollment.enrollment_schemas import *
@@ -17,14 +19,15 @@ from datetime import datetime
 settings = Settings()
 router = APIRouter()
 
+# Initialized last modified date to test
+last_modified = 'Sat, 09 Dec 2023 12:00:00 GMT'
 CLASS_TABLE = "enrollment_class"
 USER_TABLE = "enrollment_user"
 DEBUG = False
 FREEZE = False
 MAX_WAITLIST = 3
 
-# Initialized last modified date to test
-last_modified = datetime(2023,12,10) 
+
 
 def get_logger():
     return logging.getLogger(__name__)
@@ -402,16 +405,17 @@ def view_waiting_list(student_id: int, request: Request):
         )
 
     # Implement Cache Waitlist Position
-    if_modified_since = request.headers.get('If-Modified-Since')
-
+    if_modified_since = request.headers.get("If-Modified-Since")
+    
     if if_modified_since:
         # Set timestamp to current time
-        timestamp = datetime.strptime(if_modified_since, '%a, %d %b %Y %H:%M:%S %Z' )
-        
+        timestamp = datetime.strptime(if_modified_since, '%a, %d %b %Y %H:%M:%S GMT' )
+        print("Current time:", timestamp)
+    
         # Not Modified
         if timestamp >= last_modified:
             raise HTTPException(
-                status_code = 304, detail="Waitlist position has not changed"
+                status_code=304, detail="Waitlist position has not changed"
             )
         
     # fetch all relevant waitlist information for student
@@ -428,12 +432,12 @@ def view_waiting_list(student_id: int, request: Request):
         )
         waitlist_list.append(waitlist_info)
 
+    waitlist_json = jsonable_encoder(waitlist_list)
+    response = JSONResponse(content={"Waitlists": waitlist_json})
     
-    response = {"Waitlists": waitlist_list}
-
     # 'Last-Modified' header set to last modification timestamp 
     last_modified = datetime.now()
-    response.headers["Last-Modified"] = last_modified.strftime('%a, %d %b %Y %H:%M:%S %Z')
+    response.headers["Last-Modified"] = last_modified.strftime('%a, %d %b %Y %H:%M:%S GMT')
     
     # Return Student's Waitlist
     return response
