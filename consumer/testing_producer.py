@@ -19,6 +19,6 @@ connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost')
 channel = connection.channel()
 
 channel.exchange_declare(exchange='enrollment_notifications', exchange_type='fanout')
-channel.basic_publish(exchange='enrollment_notifications', routing_key='', body=message)
+channel.basic_publish(exchange='enrollment_notifications', routing_key='', body=message, properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Persistent))
 print(f" [x] Sent {message}")
 connection.close()
