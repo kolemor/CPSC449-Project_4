@@ -16,8 +16,8 @@ def email_callback(ch, method, properties, body):
     msg['To'] = to_address
 
     # Send email using smtplib
-    # server = smtplib.SMTP('localhost', 8025)
-    server = smtplib.SMTP('localhost')
+    server = smtplib.SMTP('localhost', 8025)
+    # server = smtplib.SMTP('localhost')
     server.send_message(msg)
     server.quit()
 

@@ -8,7 +8,7 @@ def webhook_callback(ch, method, properties, body):
     message_text = data.get('message')
 
     try:
-        response = httpx.post(webhook_url, json={'message': message_text})
+        response = httpx.post(webhook_url, json={'type':'Enrollment Notification', 'message': message_text})
         response.raise_for_status()
     except httpx.HTTPError as e:
         print(f"Error sending Webhook callback: {e}")
