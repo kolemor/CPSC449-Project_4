@@ -809,7 +809,35 @@ def instructor_drop_class(instructor_id: int, class_id: int, student_id: int, re
             Key={"id": class_id},
             UpdateExpression="SET dropped = list_append(dropped, :student_id)",
             ExpressionAttributeValues={":student_id": [student_id]},
-    )
+        )
+        
+        subscribed = sub.is_student_subscribed(next_student,class_id)
+        if subscribed:
+            sub.get_all_subscriptions(next_student)
+            for subscription in sub.get_all_subscriptions(next_student):
+                if subscription["class_id"] == class_id:
+                    webhook = subscription["webhook_url"]
+                    email = subscription["email"]
+                    break
+            # craft message to be sent 
+            message = {
+                "class_name": class_data["name"],
+                "message": "You have been enrolled in " + class_data["name"] + " by the registrar",
+                "webhook_url": webhook,
+                "email": email,
+            }
+            message = json.dumps(message)
+            #subscription_details = sub.get_subscription(next_student, class_id)
+            # message = "You have been enrolled in " + class_data["name"] + " by the registrar"
+            connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+            channel = connection.channel()
+
+            channel.exchange_declare(exchange='enrollment_notifications', exchange_type='fanout')
+            channel.basic_publish(exchange='enrollment_notifications', routing_key='', body=message, properties=pika.BasicProperties(delivery_mode=pika.DeliveryMode.Persistent))
+            print(f" [x] Sent {message}")
+            connection.close()
+        else:
+            print("Student is not subscribed to this class")
     else:
         next_student = None
 
