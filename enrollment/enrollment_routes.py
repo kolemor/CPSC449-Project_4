@@ -742,6 +742,8 @@ def get_instructor_dropped(instructor_id: int, class_id: int, request: Request):
 @router.post("/instructors/{instructor_id}/classes/{class_id}/students/{student_id}/drop",tags=["Instructor"])
 def instructor_drop_class(instructor_id: int, class_id: int, student_id: int, request: Request):
 
+    class_table = get_table_resource(dynamodb, CLASS_TABLE)
+
     # User Authentication
     if request.headers.get("X-User"):
         current_user = int(request.headers.get("X-User"))
@@ -764,7 +766,7 @@ def instructor_drop_class(instructor_id: int, class_id: int, student_id: int, re
 
     instructor_data = enrollment.get_user_item(instructor_id)
     student_data = enrollment.get_user_item(student_id)
-    class_data = enrollment.get_class_item(class_id)
+    class_info = enrollment.get_class_item(class_id)
 
     # checks if both student and instructor exist in db
     if not instructor_data or not student_data:
@@ -821,8 +823,8 @@ def instructor_drop_class(instructor_id: int, class_id: int, student_id: int, re
                     break
             # craft message to be sent 
             message = {
-                "class_name": class_data["name"],
-                "message": "You have been enrolled in " + class_data["name"] + " by the registrar",
+                "class_name": class_info["name"],
+                "message": "You have been enrolled in " + class_info["name"] + " by the registrar",
                 "webhook_url": webhook,
                 "email": email,
             }
