@@ -59,9 +59,10 @@ class Waitlist:
 
             # Update the placement values for remaining students
             remaining_students = r1.zrangebyscore(class_waitlist_key.format(class_id), student_placement + 1, '+inf', withscores=True)
+            print(remaining_students)
             for other_student_id, other_placement in remaining_students:
                 r1.zadd(class_waitlist_key.format(class_id), {other_student_id: other_placement - 1})
-                r1.zadd(student_waitlists_key.format(student_id), {other_student_id: other_placement - 1})
+                r1.zadd(student_waitlists_key.format(int(other_student_id)), {class_id: other_placement - 1})
 
 
     def is_student_on_waitlist(student_id, class_id):
@@ -122,7 +123,7 @@ class Waitlist:
         Returns a dictionary of all students on the classes waitlist.
 
         :param class_id: The integer id of a class.
-        :return: A dictionary of all waitlists the student is on, using the format: {class_id: placement}.
+        :return: A dictionary of all students on the class waitlist, using the format: {student_id: placement}.
         """
         # Get the waitlist information for the student
         waitlist_info_bytes = r1.zrange(class_waitlist_key.format(class_id), 0, -1, withscores=True)
