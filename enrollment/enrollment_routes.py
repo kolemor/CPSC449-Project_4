@@ -850,7 +850,7 @@ def instructor_drop_class(instructor_id: int, class_id: int, student_id: int, re
             Key={"id": class_id},
             UpdateExpression="SET enrolled = :enrolled, dropped = :dropped",
             ExpressionAttributeValues={
-                ":enrolled": enrolled_data,
+                ":enrolled": enrolled_data +[next_student],
                 ":dropped": dropped_data + [student_id],
             },
         )
