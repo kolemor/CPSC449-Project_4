@@ -4,14 +4,16 @@ import redis
 
 import pika
 import json
-
+import hashlib
 from fastapi import Depends, HTTPException, APIRouter, status, Request
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from typing import Optional
 from boto3.dynamodb.conditions import Key, Attr
 from enrollment.enrollment_schemas import *
 from enrollment.enrollment_dynamo import Enrollment, PartiQL
 from enrollment.enrollment_redis import Waitlist, Subscription
-
+from datetime import datetime
 
 
 settings = Settings()
@@ -22,6 +24,8 @@ USER_TABLE = "enrollment_user"
 DEBUG = False
 FREEZE = False
 MAX_WAITLIST = 3
+
+
 
 def get_logger():
     return logging.getLogger(__name__)
@@ -47,6 +51,11 @@ logging.config.fileConfig(
     settings.enrollment_logging_config, disable_existing_loggers=False
 )
 
+# ETag Generator for any changes waitlist
+def generate_etag(data):
+    data_string = json.dumps(data, sort_keys=True)
+    # Create a hash of this string
+    return hashlib.md5(data_string.encode()).hexdigest()
 
 # ==========================================students==================================================
 
@@ -369,7 +378,6 @@ def drop_student_from_class(student_id: int, class_id: int, request: Request):
 # Get all waiting lists for a student
 @router.get("/waitlist/students/{student_id}", tags=["Waitlist"])
 def view_waiting_list(student_id: int, request: Request):
-
     if request.headers.get("X-User"):
         current_user = int(request.headers.get("X-User"))
 
@@ -391,13 +399,26 @@ def view_waiting_list(student_id: int, request: Request):
 
     # Retrieve waitlist entries for the specified student from redis
     waitlist_data = wl.get_student_waitlist(student_id)
-
+        
     # Check if exist
     if not waitlist_data:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Student is not on a waitlist",
         )
+
+    # Generate an ETag for waitlist data
+    etag = generate_etag(waitlist_data)
+
+    # Obtain current ETag & compare against new etag, 
+    # return status 304 if same ETag
+    if_none_match = request.headers.get("If-None-Match")
+    if if_none_match and if_none_match == etag:
+        raise HTTPException(
+            status_code=status.HTTP_304_NOT_MODIFIED,
+            detail="Waitlist for student has not been modified"
+        )
+        
 
     # fetch all relevant waitlist information for student
     student_class_id = waitlist_data.keys()
@@ -413,7 +434,15 @@ def view_waiting_list(student_id: int, request: Request):
         )
         waitlist_list.append(waitlist_info)
 
-    return {"Waitlists": waitlist_list}
+    
+    waitlist_json = jsonable_encoder(waitlist_list)
+    response = JSONResponse(content={"Waitlists": waitlist_json})
+
+    # Update ETag if changed
+    response.headers["ETag"] = etag
+
+    # Return Student's Waitlist
+    return response
 
 
 # remove a student from a waiting list
