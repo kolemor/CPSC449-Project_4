@@ -47,9 +47,10 @@ wl = Waitlist
 enrollment = Enrollment(dynamodb)
 sub = Subscription()
 
-logging.config.fileConfig(
-    settings.enrollment_logging_config, disable_existing_loggers=False
-)
+if DEBUG:
+    logging.config.fileConfig(
+        settings.enrollment_logging_config, disable_existing_loggers=False
+    )
 
 # ETag Generator for any changes waitlist
 def generate_etag(data):
@@ -342,10 +343,13 @@ def drop_student_from_class(student_id: int, class_id: int, request: Request):
                     webhook = subscription["webhook_url"]
                     email = subscription["email"]
                     break
-            # craft message to be sent 
+            # craft message to be sent
+            section = str(class_data["section_number"])
+            print(section)
             message = {
                 "class_name": class_data["name"],
-                "message": "You have been enrolled in " + class_data["name"] + " by the registrar",
+                "section": str(class_data["section_number"]),
+                "message": "You have been enrolled in " + class_data["name"] + ", section " + str(class_data["section_number"]) + ", by the registrar",
                 "webhook_url": webhook,
                 "email": email,
             }
@@ -377,7 +381,7 @@ def drop_student_from_class(student_id: int, class_id: int, request: Request):
 # ==========================================wait list==========================================
 # Get all waiting lists for a student
 @router.get("/waitlist/students/{student_id}", tags=["Waitlist"])
-def view_waiting_list(student_id: int, request: Request):
+def view_all_waiting_lists(student_id: int, request: Request):
     if request.headers.get("X-User"):
         current_user = int(request.headers.get("X-User"))
 
@@ -437,6 +441,78 @@ def view_waiting_list(student_id: int, request: Request):
     
     waitlist_json = jsonable_encoder(waitlist_list)
     response = JSONResponse(content={"Waitlists": waitlist_json})
+
+    # Update ETag if changed
+    response.headers["ETag"] = etag
+
+    # Return Student's Waitlist
+    return response
+
+
+# Get student position for a waitlist for a specific class a student is on
+@router.get("/waitlist/students/{student_id}/classes/{class_id}", tags=["Waitlist"])
+def view_position(student_id: int, class_id: int, request: Request):
+    
+    # User Authentication
+    if request.headers.get("X-User"):
+        current_user = int(request.headers.get("X-User"))
+
+        roles_string = request.headers.get("X-Roles")
+        current_roles = roles_string.split(",")
+
+        r_flag = True
+        # Check if the current user's role matches 'registrar'
+        for role in current_roles:
+            if role == "registrar":
+                r_flag = False
+
+        # Check if the current user's id matches the requested student_id
+        if r_flag:
+            if current_user != student_id:
+                raise HTTPException(
+                    status_code=403, detail="Access forbidden, wrong user"
+                )
+
+    # Fetch student data from db
+    student_data = enrollment.get_user_item(student_id)
+
+    # Fetch class data from db
+    class_data = enrollment.get_class_item(class_id)
+
+    # Check if the class and student exists in the database
+    if not student_data or not class_data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Student or Class not found"
+        )
+
+    # Retrieve waitlist position for the specified class from redis
+    waitlist_position = wl.get_class_waitlist(class_id).get(str(student_id))
+        
+    # Check if exist
+    if not waitlist_position:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Student is not on a waitlist",
+        )
+
+    # Generate an ETag for waitlist data
+    etag = generate_etag(waitlist_position)
+
+    # Obtain current ETag & compare against new etag, 
+    # return status 304 if same ETag
+    if_none_match = request.headers.get("If-None-Match")
+    if if_none_match and if_none_match == etag:
+        raise HTTPException(
+            status_code=status.HTTP_304_NOT_MODIFIED,
+            detail="Waitlist for student has not been modified"
+        )
+        
+
+    # Create Waitlist_Student instance for the specified class
+    waitlist_info = Waitlist_Student(class_id=class_id, waitlist_position=waitlist_position)
+
+    waitlist_json = jsonable_encoder(waitlist_info)
+    response = JSONResponse(content={"Waitlist": waitlist_json})
 
     # Update ETag if changed
     response.headers["ETag"] = etag
@@ -768,7 +844,7 @@ def get_instructor_dropped(instructor_id: int, class_id: int, request: Request):
 
 
 # Instructor administratively drop students
-@router.post("/instructors/{instructor_id}/classes/{class_id}/students/{student_id}/drop",tags=["Instructor"])
+@router.put("/instructors/{instructor_id}/classes/{class_id}/students/{student_id}/drop",tags=["Instructor"])
 def instructor_drop_class(instructor_id: int, class_id: int, student_id: int, request: Request):
 
     class_table = get_table_resource(dynamodb, CLASS_TABLE)
@@ -852,8 +928,9 @@ def instructor_drop_class(instructor_id: int, class_id: int, student_id: int, re
                     break
             # craft message to be sent 
             message = {
-                "class_name": class_info["name"],
-                "message": "You have been enrolled in " + class_info["name"] + " by the registrar",
+                "class_name": class_data["name"],
+                "section": str(class_data["section_number"]),
+                "message": "You have been enrolled in " + class_data["name"] + ", section " + str(class_data["section_number"]) + ", by the registrar",
                 "webhook_url": webhook,
                 "email": email,
             }
