@@ -20,10 +20,6 @@ sub = Subscription()
 
 # ==========================================endpoints==================================================
 
-# Added basic functionality to endpoints, as per the "Create an enrollment notification service"
-# instructions listed in the project 4 document. Everything should work but make sure to test it
-# yourselves. Will probably have to be updated when implementing the rest of the requirements.
-
 # Subscribe to notifications for a new course
 @router.post("/students/{student_id}/subscribe/{class_id}", tags=["Notification"])
 def subscribe_to_course(student_id: int, class_id: int, email: str = "", webhook_url: str = ""):
@@ -132,6 +128,3 @@ def wipe_redis_data():
     r.flushdb()
 
     return {"message": "Redis Wiped"}
-
-
-
