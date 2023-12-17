@@ -81,7 +81,6 @@ def list_current_subscriptions(student_id: int):
 
     # Retrieve subscriptions from Redis using the correct key pattern
     subscriptions_data = sub.get_all_subscriptions(student_id)
-    print(subscriptions_data)
 
     # Convert subscriptions to instances of Sub_List model
     subscriptions = [

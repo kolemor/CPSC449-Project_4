@@ -10,8 +10,6 @@ student_waitlists_key = "student:{}:waitlists"
 class_waitlist_key_pattern = "class:*:waitlist"
 student_waitlists_key_pattern = "student:*:waitlists"
 
-# Subscription Key patterns
-sub_key = "subscription:{}:{}"
 
 class Waitlist:
 
@@ -59,7 +57,6 @@ class Waitlist:
 
             # Update the placement values for remaining students
             remaining_students = r1.zrangebyscore(class_waitlist_key.format(class_id), student_placement + 1, '+inf', withscores=True)
-            print(remaining_students)
             for other_student_id, other_placement in remaining_students:
                 r1.zadd(class_waitlist_key.format(class_id), {other_student_id: other_placement - 1})
                 r1.zadd(student_waitlists_key.format(int(other_student_id)), {class_id: other_placement - 1})
@@ -229,5 +226,5 @@ class Subscription:
         if self.redis_client.hexists(key, class_id):
             self.redis_client.hdel(key, class_id)
         else:
-            # If the subscription doesn't exist, you can raise an exception or handle it accordingly
+            # If the subscription doesn't exist, raise an exception
             raise ValueError(f"Subscription not found for student {student_id} and class {class_id}")
