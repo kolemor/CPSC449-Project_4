@@ -135,6 +135,34 @@
 
   has functions which handle password hashing
 
+## Notification Service
+
+- notification_routes.py:
+
+  contains all the routes and code for the endpoints of the API
+
+- notification.py:
+
+  the 'main' file for the notifications service
+
+- notification_schemas.py
+
+  has all the base models for the service
+
+## consumer
+
+- email_consumer.py:
+
+  contains the code to send email notifications from the fanout exchange
+
+- webhook_consumer.py:
+
+  contains the code to send webhook notifications from the fanout exchange
+
+- testing_producer.py:
+
+  facilitates testing of webhook_consumer and email_consumer
+
 ## utils
 
 - mkclaims.py
