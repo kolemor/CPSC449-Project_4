@@ -38,14 +38,15 @@ GET: http://localhost:5400/api/students/{student_id}/classes
 POST: http://localhost:5400/api/students/{student_id}/classes/{class_id}/enroll/
 [Student, Registrar]
 
-
-
 PUT: http://localhost:5400/api/students/{student_id}/classes/{class_id}/drop/
 [Student, Registrar]
 
 --Waitlist--
 
 GET: http://localhost:5400/api/waitlist/students/{student_id}
+[Student, Registrar]
+
+GET: http://localhost:5400/api/waitlist/students/{student_id}/classes/{class_id}
 [Student, Registrar]
 
 PUT: http://localhost:5400/api/waitlist/students/{student_id}/classes/{class_id}/drop/
@@ -62,7 +63,7 @@ GET: http://localhost:5400/api/instructors/{instructor_id}/classes/{class_id}/en
 GET: http://localhost:5400/api/instructors/{instructor_id}/classes/{class_id}/drop
 [Instructor, Registrar]
 
-POST: http://localhost:5400/api/instructors/{instructor_id}/classes/{class_id}/students/{student_id}/drop/
+PUT: http://localhost:5400/api/instructors/{instructor_id}/classes/{class_id}/students/{student_id}/drop/
 [Instructor, Registrar]
 
 --Registrar--
